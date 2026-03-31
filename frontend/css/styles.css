@@ -1,0 +1,64 @@
+/* BACKGROUND */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+    color: #212529;
+}
+
+/* NAVBAR */
+.custom-navbar {
+    background-color: #1d2a4e;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+/* CARD STYLE */
+.clean-card {
+    border: none;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* INPUT FIELDS */
+.clean-input {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.clean-input:focus {
+    border-color: #1d2a4e;
+    box-shadow: none;
+}
+
+/* BUTTON */
+.clean-btn {
+    background-color: #1d2a4e;
+    border: none;
+    border-radius: 8px;
+}
+
+.clean-btn:hover {
+    background-color: rgb(14, 26, 54);
+}
+
+/* TABLE */
+.clean-table th {
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.clean-table td {
+    vertical-align: middle;
+}
+
+/* BUTTONS */
+.btn-outline-primary {
+    border-radius: 6px;
+}
+
+.btn-outline-danger {
+    border-radius: 6px;
+}
