@@ -115,15 +115,27 @@ def update_mentee_page(id):
         return render_template('mentor_update_mentee.html', m=mentee)
     return "Mentee not found."
 
+@app.route('/mentor/mentee/delete/<int:id>')
+def delete_mentee(id):
+    if 'mentorID' not in session: return redirect('/')
+    
+    # Call C: ./mentor_module delete 807
+    res = run_c_query(['delete', str(id)])
+    print(f"DEBUG: Delete result for {id}: {res}")
+    
+    return redirect(url_for('view_mentees'))
+
 @app.route('/mentor/mentee/save_update', methods=['POST'])
 def save_update():
+    if 'mentorID' not in session: return redirect('/')
+    
     mid = request.form.get('id')
     cgpa = request.form.get('cgpa')
     attn = request.form.get('attendance')
     remarks = request.form.get('remarks')
     notes = request.form.get('notes')
     
-    # args: update, id, cgpa, attendance, remarks, notes
+    # Send all 5 required update arguments to C
     run_c_query(['update', str(mid), str(cgpa), str(attn), remarks, notes])
     
     return redirect(url_for('view_mentees'))
@@ -134,7 +146,7 @@ def add_mentee():
     reg = request.form.get('regNo')
     cgpa = request.form.get('cgpa')
     attn = request.form.get('attendance')
-    run_c_query(['add', name, reg, cgpa, attn, session['mentorID']])
+    run_c_query(['add', name, reg, cgpa, attn, str(session['mentorID'])])
     return redirect(url_for('view_mentees'))
 
 @app.route('/logout')
