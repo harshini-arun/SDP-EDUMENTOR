@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meetings | Mentor Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f6; }
+        .navbar { background-color: #003366; }
+        .btn-primary { background-color: #003366; border: none; }
+        .meeting-card { border-left: 5px solid #003366; margin-bottom: 15px; background: white; transition: 0.3s; }
+        .meeting-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">← Back to Mentor Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="mb-4" style="color: #003366;">Meeting Schedule Management</h2>
+
+        <div class="row">
+            <!-- Schedule New Meeting Form -->
+            <div class="col-md-4">
+                <div class="card p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3">Schedule New Session</h5>
+                    <form action="/meetings/add" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Select Mentee</label>
+                            <select name="menteeID" class="form-select">
+                                {% for m in mentees %}
+                                <option value="{{ m.id }}">{{ m.name }} ({{ m.reg }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date & Time</label>
+                            <input type="datetime-local" name="datetime" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Agenda/Topic</label>
+                            <input type="text" name="topic" class="form-control" placeholder="e.g. Project Review" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Add to Queue</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upcoming Meetings (Queue View) -->
+            <div class="col-md-8">
+                <div class="card p-4 shadow-sm">
+                    <h5 class="fw-bold mb-3">Upcoming Meetings (Queue)</h5>
+                    <div id="meetingQueue">
+                        <!-- Example Meeting Entry -->
+                        <div class="card p-3 meeting-card shadow-sm">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-1 fw-bold">Academic Performance Review</h6>
+                                    <p class="mb-0 text-muted small">Mentee: John Doe | Reg: 2023IT01</p>
+                                    <p class="mb-0 text-primary small">📅 Nov 25, 2023 - 10:30 AM</p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-sm btn-outline-success">Mark Completed</button>
+                                    <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- If no meetings -->
+                        {% if not meetings %}
+                        <div class="text-center py-5">
+                            <p class="text-muted">No pending meeting requests in the queue.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
