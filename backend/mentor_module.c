@@ -89,7 +89,10 @@ void loadMeetings() {
 
 void saveMeetings() {
     FILE* fp = fopen("../data/meetings.dat", "wb");
-    if (!fp) return;
+    if (!fp) {
+        printf("ERROR_FILE_OPEN"); // This helps debug from Python
+        return;
+    }
     Meeting* curr = qHead;
     while (curr) {
         fwrite(curr, sizeof(Meeting), 1, fp);
