@@ -44,40 +44,33 @@
                             <label class="form-label">Agenda/Topic</label>
                             <input type="text" name="topic" class="form-control" placeholder="e.g. Project Review" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Add to Queue</button>
+                        <button type="submit" class="btn btn-primary w-100">Add Meeting</button>
                     </form>
                 </div>
             </div>
 
             <!-- Upcoming Meetings (Queue View) -->
             <div class="col-md-8">
-                <div class="card p-4 shadow-sm">
-                    <h5 class="fw-bold mb-3">Upcoming Meetings (Queue)</h5>
-                    <div id="meetingQueue">
-                        <!-- Example Meeting Entry -->
-                        <div class="card p-3 meeting-card shadow-sm">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h6 class="mb-1 fw-bold">Academic Performance Review</h6>
-                                    <p class="mb-0 text-muted small">Mentee: John Doe | Reg: 2023IT01</p>
-                                    <p class="mb-0 text-primary small">📅 Nov 25, 2023 - 10:30 AM</p>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-sm btn-outline-success">Mark Completed</button>
-                                    <button class="btn btn-sm btn-outline-danger">Cancel</button>
-                                </div>
-                            </div>
+                {% for meeting in meetings %}
+                <div class="card p-3 meeting-card shadow-sm">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-1 fw-bold">{{ meeting.topic }}</h6>
+                            <p class="mb-0 text-muted small">Mentee: {{ meeting.name }} | Reg: {{ meeting.reg }}</p>
+                            <p class="mb-0 text-primary small">📅 {{ meeting.datetime }}</p>
+                            <span class="badge bg-{{ 'success' if meeting.status == 'completed' else 'warning text-dark' }}">
+                                {{ meeting.status }}
+                            </span>
                         </div>
-                        
-                        <!-- If no meetings -->
-                        {% if not meetings %}
-                        <div class="text-center py-5">
-                            <p class="text-muted">No pending meeting requests in the queue.</p>
+                        <div class="col-md-4 text-end">
+                            {% if meeting.status == 'pending' %}
+                            <a href="/meetings/complete/{{ meeting.id }}" class="btn btn-sm btn-outline-success">Mark Completed</a>
+                            <a href="/meetings/cancel/{{ meeting.id }}"   class="btn btn-sm btn-outline-danger">Cancel</a>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
-            </div>
+                {% endfor %}
         </div>
     </div>
 </body>

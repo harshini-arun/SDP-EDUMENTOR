@@ -31,8 +31,11 @@ typedef struct Meeting {
     int meetingID;
     int mentorID;
     int menteeID;
-    char date[20];
+    char menteeName[50];
+    char menteeReg[20];
     char topic[100];
+    char datetime[20];   
+    char status[20];     
     struct Meeting* next;
 } Meeting;
 

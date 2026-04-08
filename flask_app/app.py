@@ -1,162 +1,200 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "structures.h"
+from flask import Flask, render_template, request, redirect, session, url_for
+import subprocess
+import os
 
-// Global Head for Linked List
-Mentee* head = NULL;
+app = Flask(__name__)
+app.secret_key = "mentor_secret"
 
-// --- 1. FILE HANDLING FUNCTIONS ---
+# Path to the compiled C executable
+C_EXECUTABLE = "../backend/mentor_module"
 
-void loadMentees() {
-    FILE* fp = fopen("../data/mentee.dat", "rb");
-    if (!fp) return;
+def run_c_query(args):
+    result = subprocess.run([C_EXECUTABLE] + args, capture_output=True, text=True)
+    return result.stdout.strip()
+
+@app.route('/')
+def index():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    mid = request.form.get('mentorID')
+    pwd = request.form.get('password')
     
-    Mentee temp;
-    while (fread(&temp, sizeof(Mentee), 1, fp)) {
-        Mentee* newNode = (Mentee*)malloc(sizeof(Mentee));
-        if (newNode == NULL) break;
-        *newNode = temp;
-        newNode->next = head;
-        head = newNode;
-    }
-    fclose(fp);
-}
-
-void saveMentees() {
-    FILE* fp = fopen("../data/mentee.dat", "wb");
-    if (!fp) return;
-    Mentee* curr = head;
-    while (curr) {
-        fwrite(curr, sizeof(Mentee), 1, fp);
-        curr = curr->next;
-    }
-    fclose(fp);
-}
-
-// --- 2. CORE LOGIC FUNCTIONS ---
-
-void login(int id, char* pass) {
-    FILE* fp = fopen("../data/mentor.dat", "rb");
-    if (!fp) { printf("0"); return; }
+    # We call the C program. 
+    # Logic: C prints "1,Name,Dept,Designation,Email,Phone" on success
+    res = run_c_query(['login', mid, pwd])
     
-    Mentor m;
-    while (fread(&m, sizeof(Mentor), 1, fp)) {
-        if (m.mentorID == id && strcmp(m.password, pass) == 0) {
-            printf("1,%s,%s,%s,%s,%s", m.name, m.department, m.designation, m.email, m.phone);
-            fclose(fp);
-            return;
-        }
-    }
-    printf("0");
-    fclose(fp);
-}
+    if res != "0":
+        data = res.split(',')
+        session['mentorID'] = mid
+        session['name'] = data[1]
+        session['dept'] = data[2]
+        session['designation'] = data[3]
+        session['email'] = data[4]
+        session['phone'] = data[5]
+        return redirect(url_for('dashboard'))
+    else:
+        return "Login Failed. Invalid ID or Password."
 
-void listMentees(int mentorID) {
-    Mentee* curr = head;
-    int count = 0;
-    while (curr) {
-        if (curr->mentorID == mentorID) {
-            printf("%d|%s|%s|%.2f|%.2f|%s\n", 
-                curr->menteeID, curr->name, curr->regNo, 
-                curr->cgpa, curr->attendance, curr->remarks);
-            count++;
-        }
-        curr = curr->next;
-    }
-}
-
-void addMentee(Mentee m) {
-    Mentee* newNode = (Mentee*)malloc(sizeof(Mentee));
-    if (newNode == NULL) return;
-    *newNode = m;
-    newNode->next = head;
-    head = newNode;
-    saveMentees();
-    printf("SUCCESS");
-}
-
-void deleteMentee(int id) {
-    Mentee *curr = head, *prev = NULL;
-    while (curr) {
-        if (curr->menteeID == id) {
-            if (prev) prev->next = curr->next;
-            else head = curr->next;
-            free(curr);
-            saveMentees();
-            printf("DELETED");
-            return;
-        }
-        prev = curr;
-        curr = curr->next;
-    }
-    printf("NOT_FOUND");
-}
-
-// --- 3. MAIN FUNCTION (MUST BE AT THE BOTTOM) ---
-
-int main(int argc, char* argv[]) {
-    if (argc < 2) return 1;
+@app.route('/dashboard')
+def dashboard():
+    if 'mentorID' not in session:
+        return redirect('/')
     
-    srand(time(NULL));
-    loadMentees();
+    # These values come from the session (set during login)
+    return render_template('mentor.html', 
+                           name=session.get('name'), 
+                           mid=session.get('mentorID'),
+                           dept=session.get('dept', 'Information Technology'), # Example default
+                           designation=session.get('designation', 'Assistant Professor'),
+                           email=session.get('email', 'mentor@university.edu'),
+                           phone=session.get('phone', '+1 234 567 890'))
 
-    char* action = argv[1];
+@app.route('/mentor_mentees')
+def view_mentees():
+    if 'mentorID' not in session:
+        return redirect('/')
 
-    if (strcmp(action, "login") == 0) {
-        login(atoi(argv[2]), argv[3]);
-    } 
-    else if (strcmp(action, "list") == 0) {
-        listMentees(atoi(argv[2]));
-    }
-    else if (strcmp(action, "add") == 0) {
-        Mentee m;
-        memset(&m, 0, sizeof(Mentee)); 
-        m.menteeID = (rand() % 9000) + 1000;
-        strncpy(m.name, argv[2], 49);
-        strncpy(m.regNo, argv[3], 19);
-        m.cgpa = atof(argv[4]);
-        m.attendance = atof(argv[5]);
-        m.mentorID = atoi(argv[6]);
-        strcpy(m.remarks, "None");
-        strcpy(m.confidentialNotes, "No notes yet.");
-        addMentee(m);
-    }
-    else if (strcmp(action, "find") == 0) {
-        int targetId = atoi(argv[2]);
-        Mentee* curr = head;
-        while (curr) {
-            if (curr->menteeID == targetId) {
-                printf("%d|%s|%s|%.2f|%.2f|%s|%s", 
-                    curr->menteeID, curr->name, curr->regNo, 
-                    curr->cgpa, curr->attendance, curr->remarks, curr->confidentialNotes);
-                return 0;
-            }
-            curr = curr->next;
+    # 1. Initialize the list as empty so Python knows it exists
+    mentees_list = []
+
+    # 2. Call your C program to get the list of mentees
+    # We pass the action 'list' and the mentor's ID
+    res = run_c_query(['list', str(session['mentorID'])])
+
+    # 3. Process the raw string from C into a Python List
+    if res and res != "0":
+        lines = res.split('\n')
+        for line in lines:
+            if "|" in line:  # Check if the line actually contains data
+                parts = line.split('|')
+                # We create a dictionary for each mentee to make it easy for HTML to read
+                mentee_data = {
+                    'id': parts[0],
+                    'name': parts[1],
+                    'reg': parts[2],
+                    'cgpa': parts[3],
+                    'attn': parts[4],
+                    'remarks': parts[5]
+                }
+                mentees_list.append(mentee_data)
+    return render_template('mentor_mentees.html', mentees=mentees_list)
+
+@app.route('/meetings/add', methods=['POST'])
+def add_meeting():
+    if 'mentorID' not in session: return redirect('/')
+    mentee_id = request.form.get('menteeID')
+    dt = request.form.get('datetime')
+    topic = request.form.get('topic')
+
+    # Get mentee name and reg from C
+    res = run_c_query(['find', str(mentee_id)])
+    mentee_name, mentee_reg = "Unknown", ""
+    if res and "|" in res:
+        parts = res.split('|')
+        mentee_name = parts[1]
+        mentee_reg  = parts[2]
+
+    run_c_query(['meeting_add', str(session['mentorID']), str(mentee_id),
+                 mentee_name, mentee_reg, topic, dt])
+    return redirect(url_for('view_meetings'))
+
+@app.route('/mentor_meetings')
+def view_meetings():
+    if 'mentorID' not in session: return redirect('/')
+    mentees_list = []
+    res = run_c_query(['list', str(session['mentorID'])])
+    if res and res != "0":
+        for line in res.split('\n'):
+            if "|" in line:
+                parts = line.split('|')
+                mentees_list.append({'id': parts[0], 'name': parts[1], 'reg': parts[2]})
+
+    meetings_list = []
+    res = run_c_query(['meeting_list', str(session['mentorID'])])
+    if res and "|" in res:
+        for line in res.split('\n'):
+            if "|" in line:
+                parts = line.split('|')
+                meetings_list.append({
+                    'id':       parts[0],
+                    'menteeID': parts[1],
+                    'name':     parts[2],
+                    'reg':      parts[3],
+                    'topic':    parts[4],
+                    'datetime': parts[5],
+                    'status':   parts[6]
+                })
+
+    return render_template('mentor_meetings.html', mentees=mentees_list, meetings=meetings_list)
+
+@app.route('/meetings/complete/<int:meeting_id>')
+def complete_meeting(meeting_id):
+    if 'mentorID' not in session: return redirect('/')
+    run_c_query(['meeting_complete', str(meeting_id)])
+    return redirect(url_for('view_meetings'))
+
+@app.route('/meetings/cancel/<int:meeting_id>')
+def cancel_meeting(meeting_id):
+    if 'mentorID' not in session: return redirect('/')
+    run_c_query(['meeting_cancel', str(meeting_id)])
+    return redirect(url_for('view_meetings'))
+
+@app.route('/mentor/mentee/update/<int:id>')
+def update_mentee_page(id):
+    if 'mentorID' not in session: return redirect('/')
+    
+    # Call C: find mentee details to pre-fill the form
+    res = run_c_query(['find', str(id)])
+    
+    if res and res != "0":
+        parts = res.split('|')
+        mentee = {
+            'id': parts[0], 'name': parts[1], 'reg': parts[2],
+            'cgpa': parts[3], 'attn': parts[4], 'remarks': parts[5], 'notes': parts[6]
         }
-        printf("0");
-    }
-    else if (strcmp(action, "update") == 0) {
-        int targetId = atoi(argv[2]);
-        Mentee* curr = head;
-        while (curr) {
-            if (curr->menteeID == targetId) {
-                curr->cgpa = atof(argv[3]);
-                curr->attendance = atof(argv[4]);
-                strncpy(curr->remarks, argv[5], 99);
-                strncpy(curr->confidentialNotes, argv[6], 199);
-                saveMentees();
-                printf("UPDATED");
-                return 0;
-            }
-            curr = curr->next;
-        }
-        printf("FAILED");
-    }
-    else if (strcmp(action, "delete") == 0) {
-        deleteMentee(atoi(argv[2]));
-    }
+        return render_template('mentor_update.html', m=mentee)
+    return "Mentee not found."
 
-    return 0;
-}
+@app.route('/mentor/mentee/delete/<int:id>')
+def delete_mentee(id):
+    if 'mentorID' not in session: return redirect('/')
+    
+    # Call C: ./mentor_module delete 807
+    res = run_c_query(['delete', str(id)])
+    print(f"DEBUG: Delete result for {id}: {res}")
+    
+    return redirect(url_for('view_mentees'))
+
+@app.route('/mentor/mentee/save_update', methods=['POST'])
+def save_update():
+    if 'mentorID' not in session: return redirect('/')
+    
+    mid = request.form.get('id')
+    cgpa = request.form.get('cgpa')
+    attn = request.form.get('attendance')
+    remarks = request.form.get('remarks')
+    notes = request.form.get('notes')
+    
+    # Send all 5 required update arguments to C
+    run_c_query(['update', str(mid), str(cgpa), str(attn), remarks, notes])
+    
+    return redirect(url_for('view_mentees'))
+
+@app.route('/mentees/add', methods=['POST'])
+def add_mentee():
+    name = request.form.get('name')
+    reg = request.form.get('regNo')
+    cgpa = request.form.get('cgpa')
+    attn = request.form.get('attendance')
+    run_c_query(['add', name, reg, cgpa, attn, str(session['mentorID'])])
+    return redirect(url_for('view_mentees'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+if __name__ == '__main__':
+    app.run(debug=True)
