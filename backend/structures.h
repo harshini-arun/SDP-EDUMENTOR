@@ -15,6 +15,7 @@ typedef struct Mentee {
     int menteeID;
     char name[50];
     char regNo[20];
+    char password[20];
     char department[50];
     int year;
     char email[50];

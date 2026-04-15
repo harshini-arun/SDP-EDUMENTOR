@@ -197,6 +197,7 @@ int main(int argc, char* argv[]) {
         m.menteeID = (rand() % 9000) + 1000;
         strncpy(m.name, argv[2], 49);
         strncpy(m.regNo, argv[3], 19);
+        strncpy(m.password, argv[3], 19);
         m.cgpa = atof(argv[4]);
         m.attendance = atof(argv[5]);
         m.mentorID = atoi(argv[6]);

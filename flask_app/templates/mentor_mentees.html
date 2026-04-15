@@ -41,6 +41,7 @@
             <table class="table table-hover" id="menteeTable">
                 <thead>
                     <tr class="table-light">
+                        <th>Mentee ID</th>
                         <th>Reg No</th>
                         <th>Name</th>
                         <th>CGPA</th>
@@ -52,6 +53,7 @@
                 <tbody>
                     {% for m in mentees %}
                     <tr>
+                        <td><span class="badge bg-secondary px-3">{{ m.id }}</span></td>
                         <td><strong>{{ m.reg }}</strong></td>
                         <td>{{ m.name }}</td>
                         <td>{{ m.cgpa }}</td>
@@ -65,6 +67,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
         </div>
     </div>
 

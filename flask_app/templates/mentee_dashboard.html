@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard | Mentee</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .navbar { background: #003366; }
+        .card { transition: 0.3s; border: none; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark mb-5">
+        <div class="container">
+            <a class="navbar-brand" href="#">Mentee Portal</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="mb-4">Welcome, {{ name }}!</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card p-4 text-center">
+                    <h1 class="mb-3">👤</h1>
+                    <h4>My Profile</h4>
+                    <p class="text-muted small">View your details, CGPA, and attendance.</p>
+                    <a href="/mentee/details" class="btn btn-primary" style="background: #003366;">View Details</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-4 text-center">
+                    <h1 class="mb-3">👨‍🏫</h1>
+                    <h4>My Mentor</h4>
+                    <p class="text-muted small">Contact info for your assigned faculty.</p>
+                    <a href="/mentee/mentor" class="btn btn-primary" style="background: #003366;">View Mentor</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-4 text-center">
+                    <h1 class="mb-3">📅</h1>
+                    <h4>Meetings</h4>
+                    <p class="text-muted small">Request sessions or check schedule.</p>
+                    <a href="/mentee/meetings" class="btn btn-primary" style="background: #003366;">Manage Meetings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
