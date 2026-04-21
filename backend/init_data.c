@@ -12,7 +12,7 @@ int main() {
         return 1;
     }
 
-    // 2. Create sample mentor data
+    // 2. Create mentor data
     Mentor m1;
     m1.mentorID = 101;
     strcpy(m1.name, "Dr. Rajesh Kumar");
@@ -20,9 +20,8 @@ int main() {
     strcpy(m1.designation, "Senior Professor");
     strcpy(m1.email, "rajesh.k@university.edu");
     strcpy(m1.phone, "9876543210");
-    strcpy(m1.password, "admin"); // This is the password for login
+    strcpy(m1.password, "rajesh123"); 
 
-    // Create a second mentor for testing
     Mentor m2;
     m2.mentorID = 102;
     strcpy(m2.name, "Dr. Sarah Jones");
@@ -31,6 +30,15 @@ int main() {
     strcpy(m2.email, "sarah.j@university.edu");
     strcpy(m2.phone, "9123456789");
     strcpy(m2.password, "mentor123");
+
+    Mentor m3;
+    m1.mentorID = 101;
+    strcpy(m1.name, "Dr. Abdul Shah");
+    strcpy(m1.department, "Civil Engineering");
+    strcpy(m1.designation, "Assistant Professor");
+    strcpy(m1.email, "abdul,s@university.edu");
+    strcpy(m1.phone, "9876543210");
+    strcpy(m1.password, "abdul123"); 
 
     // 3. Write the structs to the binary file
     fwrite(&m1, sizeof(Mentor), 1, fp);

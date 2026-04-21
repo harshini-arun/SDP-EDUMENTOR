@@ -247,7 +247,15 @@ def mentee_meetings():
                 meetings.append({'id': p[0], 'topic': p[1], 'date': p[2], 'status': p[3]})
     return render_template('mentee_meetings.html', meetings=meetings)
 
-# --- 6. ADMIN MODULE ROUTES ---
+
+# --- 7. UTILITY ROUTES ---
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+# --- ADMIN MODULE ROUTES ---
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -257,19 +265,89 @@ def admin_login():
         if res == "1":
             session['role'] = 'admin'
             return redirect(url_for('admin_dashboard'))
-        return "Invalid Admin Access"
+        return "Invalid Admin Credentials"
     return render_template('admin_login.html')
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if session.get('role') != 'admin': return redirect('/admin/login')
-    return "<h1>Admin Dashboard</h1><p>Welcome, System Administrator.</p><a href='/logout'>Logout</a>"
+    # Gets mentor_count|mentee_count from C
+    res = run_admin_c(['stats'])
+    stats = res.split('|') if res else [0, 0]
+    return render_template('admin_dashboard.html', mentor_count=stats[0], mentee_count=stats[1])
 
-# --- 7. UTILITY ROUTES ---
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/')
+@app.route('/admin/mentors')
+def admin_mentors():
+    if session.get('role') != 'admin': return redirect('/admin/login')
+    mentors = []
+    res = run_admin_c(['list_mentors']) # BST Inorder Traversal
+    if res:
+        for line in res.split('\n'):
+            if "|" in line:
+                p = line.split('|')
+                mentors.append({'id': p[0], 'name': p[1], 'dept': p[2], 'desig': p[3], 'email': p[4]})
+    return render_template('admin_mentors.html', mentors=mentors)
 
+@app.route('/admin/mentors/add', methods=['GET', 'POST'])
+def admin_add_mentor():
+    if session.get('role') != 'admin': return redirect('/admin/login')
+    if request.method == 'POST':
+        mid = request.form.get('mentorID')
+        name = request.form.get('name')
+        dept = request.form.get('dept')
+        desig = request.form.get('desig')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        pwd = request.form.get('password')
+        run_admin_c(['add_mentor', mid, name, dept, desig, email, phone, pwd])
+        return redirect(url_for('admin_mentors'))
+    return render_template('admin_add_mentor.html')
+
+@app.route('/admin/mentor/<int:mid>')
+def admin_mentor_profile(mid):
+    if session.get('role') != 'admin': return redirect('/admin/login')
+    # 1. Search Mentor via BST
+    m_res = run_admin_c(['search_mentor', str(mid)])
+    if m_res == "0": return "Mentor Not Found"
+    p = m_res.split('|')
+    mentor_info = {'id': p[0], 'name': p[1], 'dept': p[2], 'desig': p[3], 'email': p[4], 'phone': p[5]}
+    # 2. Get Mentees using existing Mentor Module Logic
+    mentees_list = []
+    res_mentees = run_mentor_c(['list', str(mid)]) 
+    if res_mentees and res_mentees != "0":
+        for line in res_mentees.split('\n'):
+            if "|" in line:
+                pts = line.split('|')
+                mentees_list.append({'id': pts[0], 'name': pts[1], 'reg': pts[2], 'cgpa': pts[3], 'attn': pts[4]})
+    return render_template('admin_mentor_profile.html', mentor=mentor_info, mentees=mentees_list)
+
+@app.route('/admin/reports')
+def admin_reports():
+    if session.get('role') != 'admin': return redirect('/admin/login')
+    # 1. Global Stats
+    res = run_admin_c(['global_report'])
+    p = res.split('|') if res else [0, 0, 0]
+    global_stats = {'count': p[0], 'avg_cgpa': p[1], 'avg_attn': p[2]}
+    # 2. Mentor List for drill-down
+    mentors = []
+    m_res = run_admin_c(['list_mentors'])
+    if m_res:
+        for line in m_res.split('\n'):
+            if "|" in line:
+                pts = line.split('|')
+                mentors.append({'id': pts[0], 'name': pts[1], 'dept': pts[2]})
+    return render_template('admin_reports.html', stats=global_stats, mentors=mentors)
+
+@app.route('/admin/reports/mentor/<int:mid>')
+def admin_mentor_report(mid):
+    if session.get('role') != 'admin': return redirect('/admin/login')
+    # Get Mentor Name
+    m_info = run_admin_c(['search_mentor', str(mid)]).split('|')
+    # Get Averages from C
+    res = run_admin_c(['mentor_report', str(mid)])
+    p = res.split('|') if res else [0, 0, 0]
+    # Convert to numbers for Jinja math safety
+    m_stats = {'count': int(p[0]), 'avg_cgpa': float(p[1]), 'avg_attn': float(p[2]), 'name': m_info[1]}
+    return render_template('admin_mentor_report.html', s=m_stats)
 if __name__ == '__main__':
     app.run(debug=True)

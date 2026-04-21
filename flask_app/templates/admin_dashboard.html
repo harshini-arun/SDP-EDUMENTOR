@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - Mentoring System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f7f6; color: #2c3e50; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: #003366 !important; }
+        .text-navy { color: #003366; }
+        .bg-navy { background: #003366; color: white; }
+        
+        /* Dashboard Cards */
+        .card-action { 
+            border: none; 
+            border-radius: 15px; 
+            transition: all 0.3s ease; 
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .card-action:hover { 
+            transform: translateY(-10px); 
+            shadow: 0 10px 20px rgba(0,0,0,0.1); 
+            color: inherit;
+        }
+        
+        .stat-badge {
+            background: rgba(0, 51, 102, 0.1);
+            color: #003366;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: #f8f9fa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark shadow-sm mb-5">
+        <div class="container">
+            <span class="navbar-brand fw-bold">System Administrator</span>
+            <a href="/logout" class="btn btn-outline-light btn-sm px-3">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Welcome Header -->
+        <div class="row mb-5">
+            <div class="col-md-8">
+                <h1 class="text-navy fw-bold">Admin Dashboard</h1>
+                <p class="text-muted">Manage academic mentors and monitor system-wide performance.</p>
+            </div>
+            <div class="col-md-4 text-md-end align-self-center">
+                <span class="stat-badge">System Status: Online</span>
+            </div>
+        </div>
+
+        <!-- Quick Stats Overview -->
+        <div class="row mb-5 g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm p-3 text-center">
+                    <p class="text-muted small mb-0">Registered Mentors</p>
+                    <h2 class="text-navy fw-bold mb-0">{{ mentor_count }}</h2>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm p-3 text-center">
+                    <p class="text-muted small mb-0">Total Mentees</p>
+                    <h2 class="text-navy fw-bold mb-0">{{ mentee_count }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation Options (The Two Requested Paths) -->
+        <div class="row g-4">
+            
+            <!-- Option 1: View Mentors (BST Logic Path) -->
+            <div class="col-md-6">
+                <a href="/admin/mentors" class="card card-action shadow-sm h-100 text-center p-5">
+                    <div class="card-body">
+                        <div class="icon-circle">👥</div>
+                        <h3 class="text-navy fw-bold">View Mentors</h3>
+                        <p class="text-muted">Access the mentor directory, search using Binary Search Tree logic, and view specific mentor assignments.</p>
+                        <div class="btn btn-success mt-3 px-4">Open Directory</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Option 2: View Reports (Averages & Analytics Path) -->
+            <div class="col-md-6">
+                <a href="/admin/reports" class="card card-action shadow-sm h-100 text-center p-5">
+                    <div class="card-body">
+                        <div class="icon-circle">📊</div>
+                        <h3 class="text-navy fw-bold">View Reports</h3>
+                        <p class="text-muted">Monitor academic performance, calculate average CGPA, and track attendance trends across the department.</p>
+                        <div class="btn btn-success mt-3 px-4">Open Analytics</div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-5 pt-4 border-top text-center text-muted small">
+            <p>Mentoring Management System | Admin Module v1.0 | Backend: C Binary Search Tree</p>
+        </div>
+    </div>
+
+</body>
+</html>

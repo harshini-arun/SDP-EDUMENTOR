@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Mentor Directory</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f7f6; color: #2c3e50; }
+        .navbar { background: #003366 !important; }
+        .table-container { background: white; border-radius: 12px; padding: 25px; }
+        .text-navy { color: #003366; }
+        .btn-navy { background: #003366; color: white; border-radius: 5px; font-size: 0.9rem; }
+        .btn-navy:hover { background: #002244; color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/admin/dashboard">Admin Portal</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h3 class="text-navy mb-4 fw-bold">Mentor Management</h3>
+        <div class="table-container shadow-sm">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Mentor Name</th>
+                        <th>Department</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mentors %}
+                    <tr>
+                        <td class="fw-bold">{{ m.id }}</td>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.dept }}</td>
+                        <td class="text-center">
+                            <a href="/admin/mentor/{{ m.id }}" class="btn btn-navy">View Profile & Mentees</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
