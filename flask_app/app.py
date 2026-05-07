@@ -65,21 +65,33 @@ def view_mentees():
     if session.get('role') != 'mentor': return redirect('/login')
     mentees_list = []
     res = run_mentor_c(['list', str(session['mentorID'])])
+    
     if res and res != "0":
         for line in res.split('\n'):
             if "|" in line:
-                parts = line.split('|')
-                mentees_list.append({
-                    'id': parts[0], 'name': parts[1], 'reg': parts[2],
-                    'cgpa': parts[3], 'attn': parts[4], 'remarks': parts[5]
-                })
+                p = line.split('|')
+                # Safety check to ensure C sent all fields
+                if len(p) >= 11:
+                    mentees_list.append({
+                        'id': p[0], 
+                        'name': p[1], 
+                        'reg': p[2], 
+                        'dept': p[3],
+                        'year': p[4], 
+                        'email': p[5], 
+                        'phone': p[6],
+                        'cgpa': p[7], 
+                        'attn': p[8], 
+                        'remarks': p[9],
+                        'notes': p[10]
+                    })
     return render_template('mentor_mentees.html', mentees=mentees_list)
 
 @app.route('/mentor_meetings')
 def view_meetings():
     if session.get('role') != 'mentor': return redirect('/login')
     
-    # Get Mentees for the dropdown
+    # 1. Get Mentees for dropdown
     mentees_list = []
     res_m = run_mentor_c(['list', str(session['mentorID'])])
     if res_m and res_m != "0":
@@ -88,18 +100,40 @@ def view_meetings():
                 p = line.split('|')
                 mentees_list.append({'id': p[0], 'name': p[1], 'reg': p[2]})
 
-    # Get Meetings for the queue list
-    meetings_list = []
+    # 2. Fetch all meetings
     res_mt = run_mentor_c(['meeting_list', str(session['mentorID'])])
+    pending_requests = []
+    scheduled_meetings = []
+    history = []
+
     if res_mt and "|" in res_mt:
         for line in res_mt.split('\n'):
             if "|" in line:
                 parts = line.split('|')
-                meetings_list.append({
+                m_obj = {
                     'id': parts[0], 'menteeID': parts[1], 'name': parts[2],
                     'reg': parts[3], 'topic': parts[4], 'datetime': parts[5], 'status': parts[6]
-                })
-    return render_template('mentor_meetings.html', mentees=mentees_list, meetings=meetings_list)
+                }
+                if m_obj['status'] == 'pending':
+                    pending_requests.append(m_obj)
+                elif m_obj['status'] == 'scheduled':
+                    scheduled_meetings.append(m_obj)
+                elif m_obj['status'] == 'completed':
+                    history.append(m_obj)
+
+    # FIFO Rule: Only show the FIRST pending request
+    visible_request = pending_requests[0] if pending_requests else None
+
+    return render_template('mentor_meetings.html', 
+                           mentees=mentees_list, 
+                           request=visible_request, 
+                           scheduled=scheduled_meetings, 
+                           history=history)
+
+@app.route('/meetings/accept/<int:id>')
+def accept_meeting(id):
+    run_mentor_c(['meeting_accept', str(id)])
+    return redirect(url_for('view_meetings'))
 
     # --- MENTOR CRUD OPERATIONS ---
 
@@ -107,27 +141,32 @@ def view_meetings():
 def add_mentee():
     if session.get('role') != 'mentor': return redirect('/login')
     
-    name = request.form.get('name')
-    reg = request.form.get('regNo')
-    cgpa = request.form.get('cgpa')
-    attn = request.form.get('attendance')
-    
-    # Action 'add' in mentor_module.c needs 5 args: name, reg, cgpa, attn, mentorID
-    run_mentor_c(['add', name, reg, cgpa, attn, str(session['mentorID'])])
+    # Collect all form fields
+    data = [
+        'add',
+        request.form.get('name'),
+        request.form.get('regNo'),
+        request.form.get('dept'),
+        request.form.get('year'),
+        request.form.get('email'),
+        request.form.get('phone'),
+        request.form.get('cgpa'),
+        request.form.get('attendance'),
+        request.form.get('notes'), # This becomes remarks
+        str(session['mentorID'])
+    ]
+    run_mentor_c(data)
     return redirect(url_for('view_mentees'))
 
 @app.route('/mentor/mentee/update/<int:id>')
 def update_mentee_page(id):
     if session.get('role') != 'mentor': return redirect('/login')
-    
-    # Call C: find mentee details to pre-fill the form
     res = run_mentor_c(['find', str(id)])
-    
     if res and res != "0":
-        parts = res.split('|')
+        p = res.split('|')
         mentee = {
-            'id': parts[0], 'name': parts[1], 'reg': parts[2],
-            'cgpa': parts[3], 'attn': parts[4], 'remarks': parts[5], 'notes': parts[6]
+            'id': p[0], 'name': p[1], 'reg': p[2], 'dept': p[3], 'year': p[4],
+            'email': p[5], 'phone': p[6], 'cgpa': p[7], 'attn': p[8], 'remarks': p[9]
         }
         return render_template('mentor_update.html', m=mentee)
     return "Mentee not found."
@@ -135,15 +174,12 @@ def update_mentee_page(id):
 @app.route('/mentor/mentee/save_update', methods=['POST'])
 def save_update():
     if session.get('role') != 'mentor': return redirect('/login')
-    
-    mid = request.form.get('id')
-    cgpa = request.form.get('cgpa')
-    attn = request.form.get('attendance')
-    remarks = request.form.get('remarks')
-    notes = request.form.get('notes')
-    
-    # Action 'update' in mentor_module.c needs: id, cgpa, attn, remarks, notes
-    run_mentor_c(['update', str(mid), str(cgpa), str(attn), remarks, notes])
+    # Order: id, dept, year, email, phone, cgpa, attn, remarks
+    run_mentor_c([
+        'update', request.form['id'], request.form['dept'], request.form['year'],
+        request.form['email'], request.form['phone'], request.form['cgpa'], 
+        request.form['attendance'], request.form['remarks']
+    ])
     return redirect(url_for('view_mentees'))
 
 @app.route('/mentor/mentee/delete/<int:id>')
@@ -157,24 +193,45 @@ def delete_mentee(id):
 # --- MENTOR MEETING OPERATIONS ---
 
 @app.route('/meetings/add', methods=['POST'])
+@app.route('/meetings/add', methods=['POST'])
 def add_meeting():
-    if session.get('role') != 'mentor': return redirect('/login')
+    """
+    Handles meetings scheduled directly by the Mentor.
+    These bypass 'pending' and go straight to 'scheduled' status.
+    """
+    if session.get('role') != 'mentor': 
+        return redirect('/login')
     
+    # 1. Collect data from the form
     mentee_id = request.form.get('menteeID')
     dt = request.form.get('datetime')
     topic = request.form.get('topic')
 
-    # 1. Get mentee name and reg from C first
+    # 2. Get mentee name and registration from C first (to keep data consistent)
+    # The 'find' action returns: ID|Name|Reg|CGPA|Attn|Remarks|Notes
     res = run_mentor_c(['find', str(mentee_id)])
     mentee_name, mentee_reg = "Unknown", ""
+    
     if res and "|" in res:
         parts = res.split('|')
         mentee_name = parts[1]
         mentee_reg  = parts[2]
 
-    # 2. Add the meeting
-    run_mentor_c(['meeting_add', str(session['mentorID']), str(mentee_id),
-                 mentee_name, mentee_reg, topic, dt])
+    # 3. Add the meeting via C backend
+    # Arguments: action, mentorID, menteeID, name, reg, topic, datetime, source_flag
+    # The 'mentor' flag at the end sets the status to 'scheduled' automatically in C.
+    run_mentor_c([
+        'meeting_add', 
+        str(session['mentorID']), 
+        str(mentee_id),
+        mentee_name, 
+        mentee_reg, 
+        topic, 
+        dt, 
+        "mentor" 
+    ])
+
+    # 4. Refresh the page to show the meeting in the 'Active Schedule' section
     return redirect(url_for('view_meetings'))
 
 @app.route('/meetings/complete/<int:meeting_id>')

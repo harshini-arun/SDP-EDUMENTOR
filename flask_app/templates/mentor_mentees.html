@@ -42,26 +42,34 @@
                 <thead>
                     <tr class="table-light">
                         <th>Mentee ID</th>
-                        <th>Reg No</th>
-                        <th>Name</th>
-                        <th>CGPA</th>
-                        <th>Attendance</th>
-                        <th>Status/Remarks</th>
+                        <th>Profile (Name/Reg/Dept)</th>
+                        <th>Contact</th>
+                        <th>Academic Stats</th>
+                        <th>Remarks (Notes)</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for m in mentees %}
                     <tr>
-                        <td><span class="badge bg-secondary px-3">{{ m.id }}</span></td>
-                        <td><strong>{{ m.reg }}</strong></td>
-                        <td>{{ m.name }}</td>
-                        <td>{{ m.cgpa }}</td>
-                        <td>{{ m.attn }}%</td>
-                        <td><span class="badge bg-info text-dark">{{ m.remarks }}</span></td>
+                        <td><span class="badge bg-secondary">{{ m.id }}</span></td>
+                        <td>
+                            <strong>{{ m.name }}</strong><br>
+                            <small>{{ m.reg }} | Year {{ m.year }}</small><br>
+                            <span class="badge bg-light text-dark border">{{ m.dept }}</span>
+                        </td>
+                        <td>
+                            <small>📧 {{ m.email }}</small><br>
+                            <small>📞 {{ m.phone }}</small>
+                        </td>
+                        <td>
+                            <small>CGPA: <strong>{{ m.cgpa }}</strong></small><br>
+                            <small>Attn: <strong>{{ m.attn }}%</strong></small>
+                        </td>
+                        <td><p class="small italic text-muted">"{{ m.remarks }}"</p></td>
                         <td class="text-center">
                             <a href="/mentor/mentee/update/{{ m.id }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                            <a href="/mentor/mentee/delete/{{ m.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this mentee?')">Delete</a>
+                            <a href="/mentor/mentee/delete/{{ m.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">Delete</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -82,24 +90,15 @@
                 <form action="/mentees/add" method="POST">
                     <div class="modal-body">
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" name="name" class="form-control" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Registration Number</label>
-                                <input type="text" name="regNo" class="form-control" required>
-                            </div>
+                            <div class="col-md-6"><label>Full Name</label><input type="text" name="name" class="form-control" required></div>
+                            <div class="col-md-6"><label>Reg Number</label><input type="text" name="regNo" class="form-control" required></div>
+                            <div class="col-md-6"><label>Department</label><input type="text" name="dept" class="form-control" required></div>
+                            <div class="col-md-6"><label>Email ID</label><input type="email" name="email" class="form-control" required></div>
+                            <div class="col-md-4"><label>Phone</label><input type="text" name="phone" class="form-control" required></div>
+                            <div class="col-md-4"><label>CGPA</label><input type="number" step="0.01" name="cgpa" class="form-control" required></div>
+                            <div class="col-md-4"><label>Attn %</label><input type="number" step="0.01" name="attendance" class="form-control" required></div>
                             <div class="col-md-4">
-                                <label class="form-label">CGPA</label>
-                                <input type="number" step="0.01" name="cgpa" class="form-control" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Attendance %</label>
-                                <input type="number" step="0.01" name="attendance" class="form-control" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Current Year</label>
+                                <label>Current Year</label>
                                 <select name="year" class="form-select">
                                     <option value="1">1st Year</option>
                                     <option value="2">2nd Year</option>
@@ -107,10 +106,7 @@
                                     <option value="4">4th Year</option>
                                 </select>
                             </div>
-                            <div class="col-12">
-                                <label class="form-label">Confidential Notes (Mentor Only)</label>
-                                <textarea name="notes" class="form-control" rows="3" placeholder="Add specific observation about this student..."></textarea>
-                            </div>
+                            <div class="col-12"><label>Confidential Notes (Remarks)</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
                         </div>
                     </div>
                     <div class="modal-footer">

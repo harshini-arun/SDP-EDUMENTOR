@@ -2,76 +2,161 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Meetings | Mentor Portal</title>
+    <title>Meeting Management | Mentor Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f6; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .navbar { background-color: #003366; }
-        .btn-primary { background-color: #003366; border: none; }
-        .meeting-card { border-left: 5px solid #003366; margin-bottom: 15px; background: white; transition: 0.3s; }
-        .meeting-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .text-navy { color: #003366; }
+        .btn-navy { background-color: #003366; color: white; border: none; }
+        .btn-navy:hover { background-color: #002244; color: white; }
+        
+        .section-title { 
+            border-bottom: 2px solid #003366; 
+            padding-bottom: 5px; 
+            margin-bottom: 20px; 
+            font-weight: bold; 
+        }
+
+        .queue-card { 
+            border: 2px dashed #ffc107; 
+            background-color: #fffbef; 
+            border-radius: 12px;
+        }
+
+        .meeting-card { 
+            background: white; 
+            border-radius: 10px; 
+            border-left: 5px solid #003366; 
+            transition: 0.3s;
+        }
+        
+        .history-table { background: white; border-radius: 12px; overflow: hidden; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark mb-4">
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark mb-4 shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="/dashboard">← Back to Mentor Dashboard</a>
+            <a class="navbar-brand" href="/dashboard">← Back to Dashboard</a>
+            <span class="navbar-text text-white">Meeting Manager: {{ session['name'] }}</span>
         </div>
     </nav>
 
     <div class="container">
-        <h2 class="mb-4" style="color: #003366;">Meeting Schedule Management</h2>
-
         <div class="row">
-            <!-- Schedule New Meeting Form -->
+            
+            <!-- LEFT COLUMN: Direct Scheduling Form -->
             <div class="col-md-4">
-                <div class="card p-4 shadow-sm mb-4">
-                    <h5 class="fw-bold mb-3">Schedule New Session</h5>
+                <div class="card p-4 shadow-sm border-0">
+                    <h5 class="text-navy fw-bold mb-3">Schedule New Session</h5>
+                    <p class="text-muted small">Use this form to schedule a meeting directly without a mentee request.</p>
+                    <hr>
                     <form action="/meetings/add" method="POST">
                         <div class="mb-3">
-                            <label class="form-label">Select Mentee</label>
-                            <select name="menteeID" class="form-select">
+                            <label class="form-label small fw-bold">Select Mentee</label>
+                            <select name="menteeID" class="form-select" required>
+                                <option value="" selected disabled>Choose a student...</option>
                                 {% for m in mentees %}
                                 <option value="{{ m.id }}">{{ m.name }} ({{ m.reg }})</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Date & Time</label>
+                            <label class="form-label small fw-bold">Date & Time</label>
                             <input type="datetime-local" name="datetime" class="form-control" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Agenda/Topic</label>
-                            <input type="text" name="topic" class="form-control" placeholder="e.g. Project Review" required>
+                            <label class="form-label small fw-bold">Agenda / Topic</label>
+                            <input type="text" name="topic" class="form-control" placeholder="e.g. Mid-term review" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Add Meeting</button>
+                        <button type="submit" class="btn btn-navy w-100 py-2 shadow-sm">Confirm Schedule</button>
                     </form>
                 </div>
             </div>
 
-            <!-- Upcoming Meetings (Queue View) -->
+            <!-- RIGHT COLUMN: Workflow Management -->
             <div class="col-md-8">
-                {% for meeting in meetings %}
-                <div class="card p-3 meeting-card shadow-sm">
+                
+                <!-- 1. INCOMING REQUESTS (FIFO QUEUE) -->
+                <h5 class="text-warning section-title">Incoming Mentee Requests (Queue)</h5>
+                {% if request %}
+                <div class="card p-4 shadow-sm queue-card mb-4">
                     <div class="row align-items-center">
                         <div class="col-md-8">
-                            <h6 class="mb-1 fw-bold">{{ meeting.topic }}</h6>
-                            <p class="mb-0 text-muted small">Mentee: {{ meeting.name }} | Reg: {{ meeting.reg }}</p>
-                            <p class="mb-0 text-primary small">📅 {{ meeting.datetime }}</p>
-                            <span class="badge bg-{{ 'success' if meeting.status == 'completed' else 'warning text-dark' }}">
-                                {{ meeting.status }}
-                            </span>
+                            <span class="badge bg-warning text-dark mb-2">NEXT IN QUEUE</span>
+                            <h5 class="mb-1 fw-bold">{{ request.topic }}</h5>
+                            <p class="mb-0 text-muted">From: <strong>{{ request.name }}</strong></p>
+                            <small class="text-primary fw-bold">Requested Time: {{ request.datetime }}</small>
                         </div>
                         <div class="col-md-4 text-end">
-                            {% if meeting.status == 'pending' %}
-                            <a href="/meetings/complete/{{ meeting.id }}" class="btn btn-sm btn-outline-success">Mark Completed</a>
-                            <a href="/meetings/cancel/{{ meeting.id }}"   class="btn btn-sm btn-outline-danger">Cancel</a>
-                            {% endif %}
+                            <div class="d-grid gap-2">
+                                <a href="/meetings/accept/{{ request.id }}" class="btn btn-success btn-sm">Accept Request</a>
+                                <a href="/meetings/cancel/{{ request.id }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Decline this student request?')">Decline</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-        </div>
-    </div>
+                {% else %}
+                <div class="alert alert-light border text-center py-4 mb-4">
+                    <span class="text-muted small">No pending requests from mentees at this time.</span>
+                </div>
+                {% endif %}
+
+                <!-- 2. ACTIVE SCHEDULE -->
+                <h5 class="text-navy section-title">Active Schedule</h5>
+                {% if scheduled %}
+                    {% for m in scheduled %}
+                    <div class="card p-3 shadow-sm meeting-card mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <h6 class="mb-1 fw-bold text-navy">{{ m.topic }}</h6>
+                                <small class="text-muted">{{ m.name }} | {{ m.reg }}</small><br>
+                                <small class="fw-bold">📅 {{ m.datetime }}</small>
+                            </div>
+                            <div class="col-md-5 text-end">
+                                <a href="/meetings/complete/{{ m.id }}" class="btn btn-sm btn-primary px-3">Mark Completed</a>
+                                <a href="/meetings/cancel/{{ m.id }}" class="btn btn-sm btn-link text-danger text-decoration-none" onclick="return confirm('Cancel this scheduled meeting?')">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-center text-muted small py-3">No active meetings scheduled.</p>
+                {% endif %}
+
+                <!-- 3. HISTORY -->
+                <h5 class="text-muted section-title mt-5">Session History</h5>
+                <div class="history-table shadow-sm border">
+                    <table class="table table-hover mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mentee</th>
+                                <th>Topic</th>
+                                <th>Date/Time</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in history %}
+                            <tr>
+                                <td class="fw-bold">{{ h.name }}</td>
+                                <td>{{ h.topic }}</td>
+                                <td>{{ h.datetime }}</td>
+                                <td class="text-center"><span class="badge bg-secondary opacity-75">Completed</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if not history %}
+                    <div class="text-center py-3 text-muted">No past records available.</div>
+                    {% endif %}
+                </div>
+
+            </div> <!-- End Right Column -->
+        </div> <!-- End Row -->
+    </div> <!-- End Container -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

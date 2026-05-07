@@ -19,32 +19,21 @@
             <hr>
             
             <form action="/mentor/mentee/save_update" method="POST">
-                <!-- Hidden field to keep track of ID -->
                 <input type="hidden" name="id" value="{{ m.id }}">
-
-                <div class="mb-3">
-                    <label class="form-label">CGPA</label>
-                    <input type="number" step="0.01" name="cgpa" class="form-control" value="{{ m.cgpa }}" required>
+                <div class="row">
+                    <div class="col-md-8 mb-3"><label>Department</label><input type="text" name="dept" class="form-control" value="{{ m.dept }}"></div>
+                    <div class="col-md-4 mb-3"><label>Year</label><input type="number" name="year" class="form-control" value="{{ m.year }}"></div>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Attendance (%)</label>
-                    <input type="number" step="0.01" name="attendance" class="form-control" value="{{ m.attn }}" required>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label>Email</label><input type="email" name="email" class="form-control" value="{{ m.email }}"></div>
+                    <div class="col-md-6 mb-3"><label>Phone</label><input type="text" name="phone" class="form-control" value="{{ m.phone }}"></div>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">General Remarks</label>
-                    <input type="text" name="remarks" class="form-control" value="{{ m.remarks }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label>CGPA</label><input type="number" step="0.01" name="cgpa" class="form-control" value="{{ m.cgpa }}"></div>
+                    <div class="col-md-6 mb-3"><label>Attendance (%)</label><input type="number" step="0.01" name="attendance" class="form-control" value="{{ m.attn }}"></div>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label text-danger fw-bold">Confidential Notes (Mentor Only)</label>
-                    <textarea name="notes" class="form-control" rows="4">{{ m.notes }}</textarea>
-                </div>
-
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary" style="background: #003366;">Save Changes</button>
-                </div>
+                <div class="mb-3"><label>Remarks (Update Notes)</label><textarea name="remarks" class="form-control" rows="4">{{ m.remarks }}</textarea></div>
+                <div class="d-grid"><button type="submit" class="btn btn-primary">Save Changes</button></div>
             </form>
         </div>
     </div>

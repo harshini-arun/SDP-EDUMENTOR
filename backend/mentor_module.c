@@ -178,59 +178,69 @@ int main(int argc, char* argv[]) {
         }
         printf("0"); fclose(fp);
     }
-    // 2. LIST
+    // 2. LIST (Find this in your main function)
     else if (strcmp(action, "list") == 0) {
         Mentee* curr = head;
         int mentorID = atoi(argv[2]);
         while (curr) {
             if (curr->mentorID == mentorID) {
-                printf("%d|%s|%s|%.2f|%.2f|%s\n",
+                // EXACT ORDER: ID|Name|Reg|Dept|Year|Email|Phone|CGPA|Attn|Remarks|Notes
+                printf("%d|%s|%s|%s|%d|%s|%s|%.2f|%.2f|%s|%s\n",
                     curr->menteeID, curr->name, curr->regNo,
-                    curr->cgpa, curr->attendance, curr->remarks);
+                    curr->department, curr->year, curr->email, 
+                    curr->phone, curr->cgpa, curr->attendance, 
+                    curr->remarks, curr->confidentialNotes);
             }
             curr = curr->next;
         }
     }
-    // 3. ADD
+    // 3. ADD (Updated to include new fields)
     else if (strcmp(action, "add") == 0) {
         Mentee m;
         memset(&m, 0, sizeof(Mentee));
         m.menteeID = (rand() % 9000) + 1000;
         strncpy(m.name, argv[2], 49);
         strncpy(m.regNo, argv[3], 19);
-        strncpy(m.password, argv[3], 19);
-        m.cgpa = atof(argv[4]);
-        m.attendance = atof(argv[5]);
-        m.mentorID = atoi(argv[6]);
-        strcpy(m.remarks, "None");
-        strcpy(m.confidentialNotes, "No notes yet.");
+        strncpy(m.password, argv[3], 19); // Password is RegNo
+        strncpy(m.department, argv[4], 49);
+        m.year = atoi(argv[5]);
+        strncpy(m.email, argv[6], 49);
+        strncpy(m.phone, argv[7], 14);
+        m.cgpa = atof(argv[8]);
+        m.attendance = atof(argv[9]);
+        strncpy(m.remarks, argv[10], 99); // Saving "Notes" as Remarks
+        m.mentorID = atoi(argv[11]);
         addMentee(m);
     }
-    // 4. FIND
+    // 4. FIND (Updated for pre-filling the edit form)
     else if (strcmp(action, "find") == 0) {
         int targetId = atoi(argv[2]);
         Mentee* curr = head;
         while (curr) {
             if (curr->menteeID == targetId) {
-                printf("%d|%s|%s|%.2f|%.2f|%s|%s",
-                    curr->menteeID, curr->name, curr->regNo,
-                    curr->cgpa, curr->attendance, curr->remarks, curr->confidentialNotes);
+                printf("%d|%s|%s|%s|%d|%s|%s|%.2f|%.2f|%s",
+                    curr->menteeID, curr->name, curr->regNo, curr->department,
+                    curr->year, curr->email, curr->phone, curr->cgpa, 
+                    curr->attendance, curr->remarks);
                 return 0;
             }
             curr = curr->next;
         }
         printf("0");
     }
-    // 5. UPDATE
+    // 5. UPDATE (Updated to save all fields)
     else if (strcmp(action, "update") == 0) {
         int targetId = atoi(argv[2]);
         Mentee* curr = head;
         while (curr) {
             if (curr->menteeID == targetId) {
-                curr->cgpa = atof(argv[3]);
-                curr->attendance = atof(argv[4]);
-                strncpy(curr->remarks, argv[5], 99);
-                strncpy(curr->confidentialNotes, argv[6], 199);
+                strncpy(curr->department, argv[3], 49);
+                curr->year = atoi(argv[4]);
+                strncpy(curr->email, argv[5], 49);
+                strncpy(curr->phone, argv[6], 14);
+                curr->cgpa = atof(argv[7]);
+                curr->attendance = atof(argv[8]);
+                strncpy(curr->remarks, argv[9], 99); // Notes saved as Remarks
                 saveMentees();
                 printf("UPDATED");
                 return 0;
@@ -243,7 +253,7 @@ int main(int argc, char* argv[]) {
     else if (strcmp(action, "delete") == 0) {
         deleteMentee(atoi(argv[2]));
     }
-    // 7. MEETING ADD
+    // 7. MEETING ADD (Updated)
     else if (strcmp(action, "meeting_add") == 0) {
         Meeting m;
         memset(&m, 0, sizeof(Meeting));
@@ -254,9 +264,31 @@ int main(int argc, char* argv[]) {
         strncpy(m.menteeReg,  argv[5], 19);
         strncpy(m.topic,      argv[6], 99);
         strncpy(m.datetime,   argv[7], 19);
-        strcpy(m.status, "pending");
+        
+        // NEW LOGIC: If argv[8] is "mentor", set to scheduled, else pending
+        if (argc > 8 && strcmp(argv[8], "mentor") == 0)
+            strcpy(m.status, "scheduled");
+        else
+            strcpy(m.status, "pending");
+
         enqueueMeeting(m);
     }
+    // NEW ACTION: ACCEPT MEETING
+    else if (strcmp(action, "meeting_accept") == 0) {
+        int meetingID = atoi(argv[2]);
+        Meeting* curr = qHead;
+        while (curr) {
+            if (curr->meetingID == meetingID) {
+                strcpy(curr->status, "scheduled");
+                saveMeetings();
+                printf("ACCEPTED");
+                return 0;
+            }
+            curr = curr->next;
+        }
+        printf("NOT_FOUND");
+    }
+
     // 8. MEETING LIST
     else if (strcmp(action, "meeting_list") == 0) {
         listMeetings(atoi(argv[2]));
