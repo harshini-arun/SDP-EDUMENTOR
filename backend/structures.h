@@ -5,10 +5,11 @@ typedef struct {
     int mentorID;
     char name[50];
     char department[50];
+    char section[10];     
     char designation[50];
     char email[50];
     char phone[15];
-    char password[20]; // Added for login
+    char password[20]; 
 } Mentor;
 
 typedef struct Mentee {

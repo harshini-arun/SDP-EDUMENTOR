@@ -279,14 +279,32 @@ def admin_dashboard():
 @app.route('/admin/mentors')
 def admin_mentors():
     if session.get('role') != 'admin': return redirect('/admin/login')
-    mentors = []
-    res = run_admin_c(['list_mentors']) # BST Inorder Traversal
-    if res:
-        for line in res.split('\n'):
-            if "|" in line:
-                p = line.split('|')
-                mentors.append({'id': p[0], 'name': p[1], 'dept': p[2], 'desig': p[3], 'email': p[4]})
-    return render_template('admin_mentors.html', mentors=mentors)
+    
+    dept = request.args.get('dept')
+    section = request.args.get('section')
+    
+    # CASE 1: No Dept selected -> Show Departments
+    if not dept:
+        res = run_admin_c(['list_depts'])
+        items = res.split('|')
+        return render_template('admin_mentors.html', level='dept', items=items)
+
+    # CASE 2: Dept selected, no Section -> Show Sections
+    if dept and not section:
+        res = run_admin_c(['list_sections'])
+        items = res.split('|')
+        return render_template('admin_mentors.html', level='section', items=items, dept=dept)
+
+    # CASE 3: Both selected -> Show Mentors (The Leaves)
+    if dept and section:
+        mentors = []
+        res = run_admin_c(['list_by_hierarchy', dept, section])
+        if res:
+            for line in res.split('\n'):
+                if "|" in line:
+                    p = line.split('|')
+                    mentors.append({'id': p[0], 'name': p[1], 'dept': p[2], 'desig': p[3]})
+        return render_template('admin_mentors.html', level='mentor', mentors=mentors, dept=dept, section=section)
 
 @app.route('/admin/mentors/add', methods=['GET', 'POST'])
 def admin_add_mentor():

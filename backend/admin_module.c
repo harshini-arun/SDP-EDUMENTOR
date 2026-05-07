@@ -5,221 +5,200 @@
 
 /* 
    ==========================================================
-   ADMIN MODULE - BINARY SEARCH TREE (BST) IMPLEMENTATION
+   ADMIN MODULE - HIERARCHICAL BINARY TREE
    ==========================================================
-   Key: mentorID
-   Purpose: Organize and search mentors efficiently.
+   Structure:
+   Level 0: ROOT
+   Level 1: Dept (Left: IT, Right: CSE)
+   Level 2: Section (Left: A, Right: B)
+   Level 3: Mentors (Leaf Nodes)
 */
 
-// BST Node Structure
-typedef struct TreeNode {
-    Mentor data;
-    struct TreeNode *left;
-    struct TreeNode *right;
-} TreeNode;
+typedef struct HierarchyNode {
+    char label[50];          // Stores Dept/Section names
+    int isLeaf;              // 1 if Mentor node, 0 if Branch node
+    Mentor mentorData;       // Only populated if isLeaf == 1
+    struct HierarchyNode *left;
+    struct HierarchyNode *right;
+} HierarchyNode;
 
-// Function to create a new tree node
-TreeNode* createNode(Mentor m) {
-    TreeNode* newNode = (TreeNode*)malloc(sizeof(TreeNode));
-    if (newNode == NULL) return NULL;
-    newNode->data = m;
-    newNode->left = NULL;
-    newNode->right = NULL;
-    return newNode;
+// Create a branch node (Dept, Section, or Root)
+HierarchyNode* createBranchNode(char* label) {
+    HierarchyNode* node = (HierarchyNode*)malloc(sizeof(HierarchyNode));
+    strcpy(node->label, label);
+    node->isLeaf = 0;
+    node->left = node->right = NULL;
+    return node;
 }
 
-// 1. BST INSERTION
-// Logic: If ID is smaller, go left. If larger, go right.
-TreeNode* insertMentor(TreeNode* root, Mentor m) {
-    if (root == NULL) {
-        return createNode(m);
+// Create a leaf node (Mentor)
+HierarchyNode* createLeafNode(Mentor m) {
+    HierarchyNode* node = (HierarchyNode*)malloc(sizeof(HierarchyNode));
+    node->isLeaf = 1;
+    node->mentorData = m;
+    node->left = node->right = NULL;
+    return node;
+}
+
+// Insert mentor into the Hierarchical Binary Tree based on Dept and Section
+// Note: We use mentorID parity (even/odd) or ID range to simulate Sections A/B
+HierarchyNode* insertIntoHierarchy(HierarchyNode* root, Mentor m) {
+    if (root == NULL) root = createBranchNode("ROOT");
+
+    // Level 1: Department (Left = IT, Right = CSE)
+    HierarchyNode** deptPointer;
+    if (strstr(m.department, "IT") || strstr(m.department, "Information")) {
+        if (!root->left) root->left = createBranchNode("IT");
+        deptPointer = &(root->left);
+    } else {
+        if (!root->right) root->right = createBranchNode("CSE");
+        deptPointer = &(root->right);
     }
 
-    if (m.mentorID < root->data.mentorID) {
-        root->left = insertMentor(root->left, m);
-    } else if (m.mentorID > root->data.mentorID) {
-        root->right = insertMentor(root->right, m);
+    // Level 2: Section (Left = A, Right = B)
+    HierarchyNode** sectionPointer;
+    if (strcmp(m.section, "A") == 0 || strcmp(m.section, "a") == 0) {
+        if (!(*deptPointer)->left) (*deptPointer)->left = createBranchNode("Section A");
+        sectionPointer = &((*deptPointer)->left);
+    } else {
+        if (!(*deptPointer)->right) (*deptPointer)->right = createBranchNode("Section B");
+        sectionPointer = &((*deptPointer)->right);
     }
+
+    // Level 3: Mentor (Binary Tree Leaf)
+    if ((*sectionPointer)->left == NULL) {
+        (*sectionPointer)->left = createLeafNode(m);
+    } else {
+        (*sectionPointer)->right = createLeafNode(m);
+    }
+
     return root;
 }
 
-// 2. BST INORDER TRAVERSAL
-// Logic: Left -> Root -> Right (This gives us a sorted list by ID)
-void inorderTraversal(TreeNode* root) {
-    if (root != NULL) {
-        inorderTraversal(root->left);
-        // Print in pipe-separated format for Python to parse
-        printf("%d|%s|%s|%s|%s|%s\n", 
-               root->data.mentorID, 
-               root->data.name, 
-               root->data.department, 
-               root->data.designation, 
-               root->data.email, 
-               root->data.phone);
-        inorderTraversal(root->right);
-    }
-}
+// Traverse and print only Leaf Nodes (Mentors) for Flask compatibility
+void traverseHierarchy(HierarchyNode* root) {
+    if (root == NULL) return;
 
-// 3. BST SEARCH
-// Logic: Efficiently find a specific mentor without looking at every record
-TreeNode* searchMentor(TreeNode* root, int id) {
-    if (root == NULL || root->data.mentorID == id) {
-        return root;
+    // Inorder: Left, Root (if leaf), Right
+    traverseHierarchy(root->left);
+    
+    if (root->isLeaf) {
+        printf("%d|%s|%s|%s|%s|%s\n", 
+               root->mentorData.mentorID, 
+               root->mentorData.name, 
+               root->mentorData.department, 
+               root->mentorData.designation, 
+               root->mentorData.email, 
+               root->mentorData.phone);
     }
     
-    if (id < root->data.mentorID) {
-        return searchMentor(root->left, id);
-    }
-    return searchMentor(root->right, id);
+    traverseHierarchy(root->right);
 }
 
-// HELPER: Load all mentors from mentor.dat into the BST
-TreeNode* loadMentorsToBST() {
+// Search hierarchy for a specific Mentor ID
+HierarchyNode* searchHierarchy(HierarchyNode* root, int id) {
+    if (root == NULL) return NULL;
+    if (root->isLeaf && root->mentorData.mentorID == id) return root;
+
+    HierarchyNode* leftRes = searchHierarchy(root->left, id);
+    if (leftRes) return leftRes;
+    
+    return searchHierarchy(root->right, id);
+}
+
+// Helper: Build the tree from the binary file
+HierarchyNode* buildTreeFromFile() {
     FILE *fp = fopen("../data/mentor.dat", "rb");
     if (!fp) return NULL;
 
-    TreeNode* root = NULL;
+    HierarchyNode* root = createBranchNode("ROOT");
     Mentor temp;
-    // Read every mentor record from binary file
     while (fread(&temp, sizeof(Mentor), 1, fp)) {
-        root = insertMentor(root, temp);
+        insertIntoHierarchy(root, temp);
     }
     fclose(fp);
     return root;
 }
 
-// HELPER: Get counts for the dashboard statistics
+// Function for global stats (Count logic remains the same)
 void getStats() {
-    int mentorCount = 0;
-    int menteeCount = 0;
-    
-    FILE *fp1 = fopen("../data/mentor.dat", "rb");
-    FILE *fp2 = fopen("../data/mentee.dat", "rb");
-    
-    Mentor m; 
-    Mentee s;
-    
-    if(fp1) {
-        while(fread(&m, sizeof(Mentor), 1, fp1)) mentorCount++;
-        fclose(fp1);
-    }
-    
-    if(fp2) {
-        while(fread(&s, sizeof(Mentee), 1, fp2)) menteeCount++;
-        fclose(fp2);
-    }
-    
-    // Output format: mentorCount|menteeCount
-    printf("%d|%d", mentorCount, menteeCount);
+    int mCount = 0, sCount = 0;
+    FILE *f1 = fopen("../data/mentor.dat", "rb");
+    FILE *f2 = fopen("../data/mentee.dat", "rb");
+    Mentor m; Mentee s;
+    if(f1){ while(fread(&m, sizeof(Mentor), 1, f1)) mCount++; fclose(f1); }
+    if(f2){ while(fread(&s, sizeof(Mentee), 1, f2)) sCount++; fclose(f2); }
+    printf("%d|%d", mCount, sCount);
 }
 
+// Global/Mentor report logic (Unchanged to ensure Flask compatibility)
 void calculateGlobalReport() {
     FILE *fp = fopen("../data/mentee.dat", "rb");
     if (!fp) { printf("0|0|0"); return; }
-
-    Mentee m;
-    int count = 0;
-    float totalCGPA = 0, totalAttn = 0;
-
-    while (fread(&m, sizeof(Mentee), 1, fp)) {
-        totalCGPA += m.cgpa;
-        totalAttn += m.attendance;
-        count++;
-    }
+    Mentee m; int count = 0; float gpa = 0, att = 0;
+    while (fread(&m, sizeof(Mentee), 1, fp)) { gpa += m.cgpa; att += m.attendance; count++; }
     fclose(fp);
-
     if (count == 0) printf("0|0|0");
-    else printf("%d|%.2f|%.2f", count, totalCGPA/count, totalAttn/count);
+    else printf("%d|%.2f|%.2f", count, gpa/count, att/count);
 }
 
 void calculateMentorReport(int mid) {
     FILE *fp = fopen("../data/mentee.dat", "rb");
     if (!fp) { printf("0|0|0"); return; }
-
-    Mentee m;
-    int count = 0;
-    float totalCGPA = 0, totalAttn = 0;
-
+    Mentee m; int count = 0; float gpa = 0, att = 0;
     while (fread(&m, sizeof(Mentee), 1, fp)) {
-        if (m.mentorID == mid) {
-            totalCGPA += m.cgpa;
-            totalAttn += m.attendance;
-            count++;
-        }
+        if (m.mentorID == mid) { gpa += m.cgpa; att += m.attendance; count++; }
     }
     fclose(fp);
-
     if (count == 0) printf("0|0|0");
-    else printf("%d|%.2f|%.2f", count, totalCGPA/count, totalAttn/count);
+    else printf("%d|%.2f|%.2f", count, gpa/count, att/count);
 }
 
-/* 
-   ==========================================================
-   MAIN FUNCTION - ROUTING COMMANDS FROM FLASK
-   ==========================================================
-*/
 int main(int argc, char *argv[]) {
-    // We need at least the 'action' argument
-    if (argc < 2) {
-        return 1;
-    }
-
+    if (argc < 2) return 1;
     char *action = argv[1];
 
-    // ADMIN LOGIN
     if (strcmp(action, "login") == 0) {
-        if (argc < 4) return 1;
-        char *username = argv[2];
-        char *password = argv[3];
-        
-        // Simple authentication: user: admin, pass: admin123
-        if (strcmp(username, "admin") == 0 && strcmp(password, "admin123") == 0) {
-            printf("1"); // Success
-        } else {
-            printf("0"); // Failure
-        }
+        if (strcmp(argv[2], "admin") == 0 && strcmp(argv[3], "admin123") == 0) printf("1");
+        else printf("0");
     } 
-
-    // LIST ALL MENTORS (Sorted via BST Inorder)
     else if (strcmp(action, "list_mentors") == 0) {
-        TreeNode* root = loadMentorsToBST();
-        if (root == NULL) {
-            return 0;
-        }
-        inorderTraversal(root);
+        HierarchyNode* root = buildTreeFromFile();
+        traverseHierarchy(root);
     } 
-
-    // SEARCH FOR A SPECIFIC MENTOR (BST Search)
     else if (strcmp(action, "search_mentor") == 0) {
-        if (argc < 3) return 1;
-        int searchID = atoi(argv[2]);
-        TreeNode* root = loadMentorsToBST();
-        TreeNode* result = searchMentor(root, searchID);
+        int id = atoi(argv[2]);
+        HierarchyNode* root = buildTreeFromFile();
+        HierarchyNode* res = searchHierarchy(root, id);
+        if (res) printf("%d|%s|%s|%s|%s|%s", res->mentorData.mentorID, res->mentorData.name, res->mentorData.department, res->mentorData.designation, res->mentorData.email, res->mentorData.phone);
+        else printf("0");
+    }
+    else if (strcmp(action, "stats") == 0) getStats();
+    else if (strcmp(action, "global_report") == 0) calculateGlobalReport();
+    else if (strcmp(action, "mentor_report") == 0) calculateMentorReport(atoi(argv[2]));
+    else if (strcmp(action, "list_depts") == 0) {
+        // Level 1: Root children
+        printf("IT|CSE"); 
+    } 
+    else if (strcmp(action, "list_sections") == 0) {
+        // Level 2: Dept children
+        printf("Section A|Section B");
+    }
+    else if (strcmp(action, "list_by_hierarchy") == 0) {
+        // Level 3: Get mentors in a specific Section of a specific Dept
+        char* targetDept = argv[2];
+        char* targetSection = argv[3];
+        HierarchyNode* root = buildTreeFromFile();
         
-        if (result) {
-            printf("%d|%s|%s|%s|%s|%s", 
-                   result->data.mentorID, 
-                   result->data.name, 
-                   result->data.department, 
-                   result->data.designation, 
-                   result->data.email, 
-                   result->data.phone);
-        } else {
-            printf("0"); // Not found
-        }
-    }
+        // Navigate manually: Root -> Dept -> Section
+        HierarchyNode* deptNode = (strstr(targetDept, "IT")) ? root->left : root->right;
+        if (!deptNode) return 0;
 
-    // REPORTS
-    else if (strcmp(action, "global_report") == 0) {
-        calculateGlobalReport();
-    }
-    else if (strcmp(action, "mentor_report") == 0) {
-        calculateMentorReport(atoi(argv[2]));
-    }
+        HierarchyNode* sectionNode = (strstr(targetSection, "A")) ? deptNode->left : deptNode->right;
+        if (!sectionNode) return 0;
 
-    // SYSTEM STATISTICS
-    else if (strcmp(action, "stats") == 0) {
-        getStats();
+        // Print mentors in this leaf
+        traverseHierarchy(sectionNode);
     }
 
     return 0;

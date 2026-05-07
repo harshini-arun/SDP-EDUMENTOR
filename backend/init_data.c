@@ -2,54 +2,55 @@
 #include <string.h>
 #include "structures.h"
 
-int main() {
-    // 1. Open the file in "wb" (Write Binary) mode
-    // This will create the file if it doesn't exist, or overwrite it if it does
-    FILE *fp = fopen("../data/mentor.dat", "wb");
+// Helper function to simplify filling mentor data
+void fillMentor(Mentor *m, int id, char* name, char* dept, char* sec, char* desig, char* email, char* phone, char* pass) {
+    m->mentorID = id;
+    strcpy(m->name, name);
+    strcpy(m->department, dept);
+    strcpy(m->section, sec);
+    strcpy(m->designation, desig);
+    strcpy(m->email, email);
+    strcpy(m->phone, phone);
+    strcpy(m->password, pass);
+}
 
+int main() {
+    FILE *fp = fopen("../data/mentor.dat", "wb");
     if (fp == NULL) {
-        printf("Error: Could not create data folder or file. Make sure the 'data' folder exists.\n");
+        printf("Error: Could not open file for writing.\n");
         return 1;
     }
 
-    // 2. Create mentor data
-    Mentor m1;
-    m1.mentorID = 101;
-    strcpy(m1.name, "Dr. Rajesh Kumar");
-    strcpy(m1.department, "Information Technology");
-    strcpy(m1.designation, "Senior Professor");
-    strcpy(m1.email, "rajesh.k@university.edu");
-    strcpy(m1.phone, "9876543210");
-    strcpy(m1.password, "rajesh123"); 
+    Mentor mentors[8];
 
-    Mentor m2;
-    m2.mentorID = 102;
-    strcpy(m2.name, "Dr. Sarah Jones");
-    strcpy(m2.department, "Computer Science");
-    strcpy(m2.designation, "Assistant Professor");
-    strcpy(m2.email, "sarah.j@university.edu");
-    strcpy(m2.phone, "9123456789");
-    strcpy(m2.password, "mentor123");
+    // --- DEPARTMENT: IT ---
+    // Section A
+    fillMentor(&mentors[0], 101, "Dr. Rajesh Kumar", "IT", "A", "Professor", "rajesh@univ.edu", "9876543210", "rajesh123");
+    fillMentor(&mentors[1], 102, "Dr. Sarah Jones", "IT", "A", "Asst Professor", "sarah@univ.edu", "9876543211", "sarah123");
+    
+    // Section B
+    fillMentor(&mentors[2], 103, "Dr. Abdul Shah", "IT", "B", "Asst Professor", "abdul@univ.edu", "9876543212", "abdul123");
+    fillMentor(&mentors[3], 104, "Dr. Priya Sharma", "IT", "B", "Lecturer", "priya@univ.edu", "9876543213", "priya123");
 
-    Mentor m3;
-    m1.mentorID = 101;
-    strcpy(m1.name, "Dr. Abdul Shah");
-    strcpy(m1.department, "Civil Engineering");
-    strcpy(m1.designation, "Assistant Professor");
-    strcpy(m1.email, "abdul,s@university.edu");
-    strcpy(m1.phone, "9876543210");
-    strcpy(m1.password, "abdul123"); 
+    // --- DEPARTMENT: CSE ---
+    // Section A
+    fillMentor(&mentors[4], 105, "Dr. John Smith", "CSE", "A", "Professor", "john@univ.edu", "9876543214", "john123");
+    fillMentor(&mentors[5], 106, "Dr. Emily Davis", "CSE", "A", "Asst Professor", "emily@univ.edu", "9876543215", "emily123");
 
-    // 3. Write the structs to the binary file
-    fwrite(&m1, sizeof(Mentor), 1, fp);
-    fwrite(&m2, sizeof(Mentor), 1, fp);
+    // Section B
+    fillMentor(&mentors[6], 107, "Dr. Michael Chen", "CSE", "B", "Professor", "mike@univ.edu", "9876543216", "mike123");
+    fillMentor(&mentors[7], 108, "Dr. Ananya Iyer", "CSE", "B", "Asst Professor", "ananya@univ.edu", "9876543217", "ananya123");
 
-    // 4. Close the file
+    // 3. Write all 8 mentors at once
+    fwrite(mentors, sizeof(Mentor), 8, fp);
+
     fclose(fp);
 
-    printf("Database initialized successfully!\n");
-    printf("Mentor 1: ID 101, Pass: admin\n");
-    printf("Mentor 2: ID 102, Pass: mentor123\n");
+    printf("Database Initialized with 8 Mentors!\n");
+    printf("IT Section A: 101, 102\n");
+    printf("IT Section B: 103, 104\n");
+    printf("CSE Section A: 105, 106\n");
+    printf("CSE Section B: 107, 108\n");
 
     return 0;
 }

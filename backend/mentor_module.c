@@ -169,6 +169,7 @@ int main(int argc, char* argv[]) {
         if (!fp) { printf("0"); return 0; }
         Mentor m;
         int id = atoi(argv[2]);
+        char* inputPass = argv[3];
         while (fread(&m, sizeof(Mentor), 1, fp)) {
             if (m.mentorID == id && strcmp(m.password, argv[3]) == 0) {
                 printf("1,%s,%s,%s,%s,%s", m.name, m.department, m.designation, m.email, m.phone);

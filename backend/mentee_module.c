@@ -4,7 +4,7 @@
 #include <time.h>
 #include "structures.h"
 
-// Helper function to find a mentee in the binary file
+// LOGIN
 int menteeLogin(int id, char* pass) {
     FILE* fp = fopen("../data/mentee.dat", "rb");
     if (!fp) return 0;
@@ -12,7 +12,6 @@ int menteeLogin(int id, char* pass) {
     Mentee temp;
     while (fread(&temp, sizeof(Mentee), 1, fp)) {
         if (temp.menteeID == id && strcmp(temp.password, pass) == 0) {
-            // Print success and basic info for session
             printf("1|%d|%s|%d", temp.menteeID, temp.name, temp.mentorID);
             fclose(fp);
             return 1;
@@ -22,7 +21,7 @@ int menteeLogin(int id, char* pass) {
     return 0;
 }
 
-// Function to fetch and print mentee details (Excluding Confidential Notes)
+// VIEW SELF DETAILS
 void viewMyDetails(int id) {
     FILE* fp = fopen("../data/mentee.dat", "rb");
     if (!fp) return;
@@ -92,7 +91,7 @@ void requestMeeting(int mentorID, int menteeID, char* topic, char* dt) {
     }
 }
 
-// Function to list meetings for this student
+// MEETING LIST
 void listMyMeetings(int menteeID) {
     FILE* fp = fopen("../data/meetings.dat", "rb");
     if (!fp) return;
@@ -120,7 +119,6 @@ int main(int argc, char* argv[]) {
         viewMyMentor(atoi(argv[2]));
     }
     else if (strcmp(action, "request_meeting") == 0) {
-        // mentorID, menteeID, topic, datetime
         requestMeeting(atoi(argv[2]), atoi(argv[3]), argv[4], argv[5]);
     }
     else if (strcmp(action, "list_meetings") == 0) {
